@@ -291,6 +291,17 @@
   .p-card:hover .p-play svg{fill:#0A0A0A;}
   .p-cat{font-size:var(--text-sm);color:var(--color-primary);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem;display:block;font-weight:600;}
   .p-title{font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;color:var(--color-accent);}
+  button.p-card{display:block;width:100%;padding:0;background:none;color:inherit;font:inherit;text-align:left;}
+  .video-modal{
+    position:fixed;inset:0;z-index:999;background:rgba(3,3,3,.92);backdrop-filter:blur(10px);
+    display:flex;align-items:center;justify-content:center;padding:clamp(1rem,3vw,2.5rem);
+    opacity:0;pointer-events:none;transition:opacity var(--duration-base) var(--ease-out);
+  }
+  .video-modal.open{opacity:1;pointer-events:auto;}
+  .video-modal-card{position:relative;width:min(92vw,520px);aspect-ratio:9/16;background:#000;border:1px solid rgba(201,169,110,.45);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.65);}
+  .video-modal iframe{width:100%;height:100%;border:0;display:block;}
+  .video-modal-close{position:absolute;top:1rem;right:1rem;z-index:1000;width:44px;height:44px;border-radius:50%;border:1px solid rgba(245,241,232,.28);background:rgba(10,10,10,.72);color:var(--color-accent);cursor:pointer;font-size:1.7rem;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .video-modal-close:hover{border-color:var(--color-primary);color:var(--color-primary);}
 
   /* ============ PROCESS ============ */
   .process-section{background:var(--color-bg-alt);}
@@ -596,11 +607,11 @@
         </div>
         <div class="p-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
       </div>
-      <a class="p-item p-card" data-cat="social" href="https://youtube.com/shorts/CJpSwxkNLRw?feature=share" target="_blank" rel="noopener noreferrer" aria-label="Assistir Short UP Mídia no YouTube">
+      <button class="p-item p-card" data-cat="social" data-video-src="https://www.youtube.com/embed/CJpSwxkNLRw?autoplay=1&rel=0&playsinline=1" aria-label="Assistir vídeo Clube Odontológico no site">
         <div class="p-thumb" style="background:linear-gradient(0deg, rgba(10,10,10,.2), rgba(10,10,10,.2)), url('https://i.ytimg.com/vi/CJpSwxkNLRw/hq2.jpg') center/cover;"></div>
         <div class="p-overlay"><span class="p-cat">Social Media</span><span class="p-title">Clube Odontológico</span></div>
         <div class="p-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-      </a>
+      </button>
       <div class="p-item p-card" data-cat="vsl">
         <div class="p-thumb" style="background:linear-gradient(160deg,#23200f,#0a0a0a);"></div>
         <div class="p-overlay"><span class="p-cat">VSL</span><span class="p-title">Método Ascend — Vídeo de Vendas</span></div>
@@ -840,6 +851,13 @@
   </div>
 </footer>
 
+<div class="video-modal" id="videoModal" aria-hidden="true" role="dialog" aria-label="Visualização do vídeo">
+  <button class="video-modal-close" id="videoModalClose" aria-label="Fechar vídeo">×</button>
+  <div class="video-modal-card">
+    <iframe id="videoModalFrame" title="Vídeo Clube Odontológico" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+</div>
+
 <script>
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
@@ -875,6 +893,31 @@
         item.style.display = match ? '' : 'none';
       });
     });
+  });
+
+  const videoModal = document.getElementById('videoModal');
+  const videoModalFrame = document.getElementById('videoModalFrame');
+  const videoModalClose = document.getElementById('videoModalClose');
+  const closeVideoModal = () => {
+    videoModal.classList.remove('open');
+    videoModal.setAttribute('aria-hidden', 'true');
+    videoModalFrame.src = '';
+    document.body.style.overflow = '';
+  };
+  document.querySelectorAll('[data-video-src]').forEach(card => {
+    card.addEventListener('click', () => {
+      videoModalFrame.src = card.dataset.videoSrc;
+      videoModal.classList.add('open');
+      videoModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+  videoModalClose.addEventListener('click', closeVideoModal);
+  videoModal.addEventListener('click', (event) => {
+    if (event.target === videoModal) closeVideoModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && videoModal.classList.contains('open')) closeVideoModal();
   });
 </script>
 
