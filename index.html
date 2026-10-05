@@ -971,16 +971,16 @@
         </div>
       </div>
 
-      <form class="form-card reveal" style="transition-delay:100ms" onsubmit="event.preventDefault(); this.querySelector('.btn').textContent='Mensagem enviada ✓';">
+      <form class="form-card reveal" id="leadForm" style="transition-delay:100ms">
         <div class="form-row">
-          <div class="field"><label>Nome</label><input type="text" required placeholder="Seu nome"></div>
-          <div class="field"><label>E-mail</label><input type="email" required placeholder="voce@empresa.com"></div>
+          <div class="field"><label for="leadNome">Nome</label><input id="leadNome" name="nome" type="text" required placeholder="Seu nome" autocomplete="name"></div>
+          <div class="field"><label for="leadEmail">E-mail</label><input id="leadEmail" name="email" type="email" required placeholder="voce@empresa.com" autocomplete="email"></div>
         </div>
         <div class="form-row">
-          <div class="field"><label>WhatsApp</label><input type="tel" placeholder="(61) 98159-0786"></div>
+          <div class="field"><label for="leadWhatsapp">WhatsApp</label><input id="leadWhatsapp" name="whatsapp" type="tel" placeholder="(61) 98159-0786" autocomplete="tel"></div>
           <div class="field">
-            <label>Tipo de projeto</label>
-            <select>
+            <label for="leadProjeto">Tipo de projeto</label>
+            <select id="leadProjeto" name="projeto">
               <option>Vídeo Institucional</option>
               <option>Conteúdo para Redes Sociais</option>
               <option>VSL / Vídeo de Vendas</option>
@@ -989,11 +989,12 @@
             </select>
           </div>
         </div>
-        <div class="field"><label>Conte sobre seu projeto</label><textarea placeholder="Objetivo, prazo, referências..."></textarea></div>
-        <button type="submit" class="btn btn-primary">
+        <div class="field"><label for="leadMensagem">Conte sobre seu projeto</label><textarea id="leadMensagem" name="mensagem" placeholder="Objetivo, prazo, referências..."></textarea></div>
+        <button type="submit" class="btn btn-primary" id="leadSubmit">
           Enviar Solicitação
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
+        <p class="form-status" id="leadStatus" aria-live="polite"></p>
       </form>
     </div>
   </div>
@@ -1107,6 +1108,47 @@
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && videoModal.classList.contains('open')) closeVideoModal();
+  });
+
+  const leadForm = document.getElementById('leadForm');
+  const leadSubmit = document.getElementById('leadSubmit');
+  const leadStatus = document.getElementById('leadStatus');
+  const leadEndpoint = '/api/lead';
+  leadForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const originalHtml = leadSubmit.innerHTML;
+    const formData = new FormData(leadForm);
+    const payload = Object.fromEntries(formData.entries());
+    payload.origem = 'Portfólio UP Mídia';
+    payload.page = window.location.href;
+    payload.userAgent = navigator.userAgent;
+    leadSubmit.disabled = true;
+    leadSubmit.textContent = 'Enviando...';
+    leadStatus.textContent = 'Registrando sua solicitação...';
+    try {
+      const response = await fetch(leadEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !data.whatsappUrl) throw new Error(data.error || 'Falha no envio');
+      leadStatus.textContent = 'Solicitação registrada. Abrindo WhatsApp...';
+      leadSubmit.textContent = 'Solicitação enviada ✓';
+      window.location.href = data.whatsappUrl;
+    } catch (error) {
+      leadStatus.textContent = 'Não conseguimos registrar agora. Você será direcionado ao WhatsApp.';
+      const fallbackText = `Olá, vim pelo portfólio da UP Mídia e quero solicitar um orçamento.
+
+Nome: ${payload.nome || ''}
+E-mail: ${payload.email || ''}
+WhatsApp: ${payload.whatsapp || ''}
+Projeto: ${payload.projeto || ''}
+Mensagem: ${payload.mensagem || ''}`;
+      window.location.href = 'https://wa.me/5561981590786?text=' + encodeURIComponent(fallbackText);
+      leadSubmit.disabled = false;
+      leadSubmit.innerHTML = originalHtml;
+    }
   });
 </script>
 
